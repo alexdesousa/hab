@@ -11,10 +11,36 @@ the file `.envrc` if it's found while changing directories.
 ```bash
 ~ $ cd my_project
 [SUCCESS]  Loaded hab [/home/user/my_project/.envrc]
-my_project $ echo "$MY_HOSTNAME"
+~/my_project $ echo "$MY_HOSTNAME"
 https://my.hab
-my_project $ cat .envrc
+~/my_project $ cat .envrc
 export MY_HOSTNAME="https://my.hab"
+```
+
+## Loading special habs
+
+By default, _Hab_ will try to load `.envrc` file, but it's possible to have
+several of those files for different purposes e.g:
+
+- `.envrc.prod` for production OS variables.
+- `.envrc.test` for testing OS variables.
+- `.envrc` for development variables.
+
+_Hab_ will load the development variables by default, but it can load the other
+files using the following command:
+
+```bash
+~/my_project $ load_hab prod # where `prod` is the extension of the file.
+[SUCCESS]  Loaded hab [/home/user/my_project/.envrc.prod]
+```
+
+## Base _Hab_ name
+
+By default, the _Hab_ file is always `.envrc`, but this can be change by
+changing the value of the variable `$HAB_BASE` in your `$HOME/.zshrc` file e.g:
+
+```bash
+export HAB_BASE=".hab_base"
 ```
 
 ## Installation
