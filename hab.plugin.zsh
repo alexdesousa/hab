@@ -61,19 +61,50 @@ function get_hab_file() {
   echo "$hab_file"
 }
 
+# Unloads variables
+function unload_variables() {
+  local current_hab="$1"
+  local unload=""
+
+  unload=$(
+    cat "$current_hab" |
+    grep '^export .*$' |
+    sed -e 's/^export \([0-9a-zA-Z\_]*\)=.*$/\1/'
+  )
+
+  while read -r line
+  do
+    unset "$line"
+    hab_warn "Unloaded variable $line"
+  done <<<"$(echo "$unload")"
+}
+
+# Unloads functions
+function unload_functions() {
+  local current_hab="$1"
+  local unload=""
+
+  unload=$(
+    cat "$current_hab" |
+    grep '^function .*$' |
+    sed -e 's/^function \([0-9a-zA-Z\_]*\).*$/\1/'
+  )
+
+  while read -r line
+  do
+    unset -f "$line"
+    hab_warn "Unloaded function $line"
+  done <<<"$(echo "$unload")"
+}
+
 # Unloads current hab
 function unload_current_hab() {
   local unload=""
 
   if [ -n "$CURRENT_HAB" ] && [ -r "$CURRENT_HAB" ]
   then
-    unload=$(cat "$CURRENT_HAB" | sed -e 's/^export \([0-9a-zA-Z\_]*\)=.*$/\1/')
-
-    while read -r line
-    do
-      unset "$line"
-      hab_warn "Unloaded variable $line"
-    done <<<"$(echo "$unload")"
+    unload_variables "$CURRENT_HAB"
+    unload_functions "$CURRENT_HAB"
   fi
 
   export CURRENT_HAB=""
@@ -93,12 +124,11 @@ function load_hab() {
 
   hab_file=$(get_hab_file "$hab_type")
 
+  unload_current_hab
+
   if [ -n "$hab_file" ]
   then
-    unload_current_hab
     load_new_hab "$hab_file"
-  else
-    unload_current_hab
   fi
 }
 
