@@ -45,6 +45,15 @@ Then:
    [WARN]  Unloaded function clean_build
    ```
 
+## Helper commands
+
+Though everything happens automatically, this plugin provides the following
+command helpers:
+
+- `hab_load [<extension>]` to manually load a `.envrc[.<extension>]` file.
+- `hab_unload` to manually unload current `.envrc[.<extension>]` file.
+- `hab_update` to manually update the plugin.
+
 ## Loading special habs
 
 By default, `Hab` will try to load `.envrc` file, but it's possible to have
@@ -58,7 +67,7 @@ several of those files for different purposes e.g:
 files using the following command:
 
 ```bash
-~/my_project $ load_hab prod # it'll load .envrc.prod
+~/my_project $ hab_load prod # it'll load .envrc.prod
 [SUCCESS]  Loaded hab [/home/user/my_project/.envrc.prod]
 ```
 
@@ -88,7 +97,11 @@ plugins=(
 )
 ```
 
-> Important: when updating, delete `$ZSH_CUSTOM/plugins/hab` folder first.
+> Important: when updating you can run the following:
+>
+> ```bash
+> cd `$ZSH_CUSTOM/plugins/hab` && git pull origin master
+> ```
 
 ## Author
 
