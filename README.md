@@ -88,6 +88,8 @@ plugins=(
 )
 ```
 
+> Important: when updating, delete `$ZSH_CUSTOM/plugins/hab` folder first.
+
 ## Author
 
 Alexander de Sousa.
