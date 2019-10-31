@@ -74,8 +74,11 @@ function __hab_unload_variables() {
 
   while read -r line
   do
-    unset "$line"
-    __hab_warn "Unloaded variable $line"
+    if [ -n "$line" ]
+    then
+      unset "$line"
+      __hab_warn "Unloaded variable $line"
+    fi
   done <<<"$(echo "$unload")"
 }
 
@@ -92,8 +95,11 @@ function __hab_unload_functions() {
 
   while read -r line
   do
-    unset -f "$line"
-    __hab_warn "Unloaded function $line"
+    if [ -n "$line" ]
+    then
+      unset -f "$line"
+      __hab_warn "Unloaded function $line"
+    fi
   done <<<"$(echo "$unload")"
 }
 
