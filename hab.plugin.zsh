@@ -188,7 +188,7 @@ function __hab_env_list() {
   local envs=""
 
   envs=$(
-    ls -a .envrc.* |
+    ls -a .envrc.* 2> /dev/null |
     sed 's/'$HAB_BASE'\.\(.*\)/\1/g' |
     tr '\n' ' '
   )
