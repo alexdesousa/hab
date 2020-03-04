@@ -10,7 +10,8 @@
 ##################
 # Global variables
 
-export CURRENT_HAB=""
+export HAB_CURRENT=""
+export HAB_MODIFICATION_DATE=""
 [ -z "$HAB_BASE" ] && export HAB_BASE=".envrc"
 
 ###################
@@ -107,27 +108,27 @@ function __hab_unload_functions() {
 function __hab_unload_current() {
   local unload=""
 
-  if [ -n "$CURRENT_HAB" ] && [ -r "$CURRENT_HAB" ]
+  if [ -n "$HAB_CURRENT" ] && [ -r "$HAB_CURRENT" ]
   then
-    __hab_unload_variables "$CURRENT_HAB"
-    __hab_unload_functions "$CURRENT_HAB"
+    __hab_unload_variables "$HAB_CURRENT"
+    __hab_unload_functions "$HAB_CURRENT"
   fi
 
-  export CURRENT_HAB=""
+  export HAB_CURRENT=""
+  export HAB_MODIFICATION_DATE=""
 }
 
 # Loads new hab
 function __hab_load_new() {
-  export CURRENT_HAB="$1"
-  source "$CURRENT_HAB"
-  __hab_success "Loaded hab [$CURRENT_HAB]"
+  export HAB_CURRENT="$1"
+  export HAB_MODIFICATION_DATE=$(date -r "$HAB_CURRENT")
+
+  source "$HAB_CURRENT"
+  __hab_success "Loaded hab [$HAB_CURRENT] (Last modified $HAB_MODIFICATION_DATE)"
 }
 
-##################
-# Public functions
-
 # Updates hab plugin
-function hab_update() {
+function __hab_update() {
   if [ -d "$ZSH_CUSTOM/plugins/hab/.git" ]
   then
     (
@@ -138,18 +139,18 @@ function hab_update() {
 }
 
 # Unloads current hab
-function hab_unload() {
+function __hab_unload() {
   __hab_unload_current
 }
 
 # Loads a new hab
-function hab_load() {
+function __hab_load() {
   local hab_type="$1"
   local hab_file=""
 
   hab_file=$(__hab_get_file "$hab_type")
 
-  hab_unload
+  __hab_unload_current
 
   if [ -n "$hab_file" ]
   then
@@ -157,11 +158,127 @@ function hab_load() {
   fi
 }
 
+# Reloads a hab
+function __hab_reload() {
+  local hab_type="$(basename "$HAB_CURRENT")"
+
+  hab_type="${hab_type##*.}"
+  if [ ".$hab_type" = "$HAB_BASE" ]
+  then
+    hab_type=""
+  fi
+
+  if [ -n "$HAB_CURRENT" ] &&
+     [ "$(date -r "$HAB_CURRENT")" != "$HAB_MODIFICATION_DATE" ]
+  then
+    __hab_load "$hab_type"
+  fi
+}
+
+# Hab usage
+function __hab_usage() {
+  echo "\033[1;1mUsage:\033[0;0m
+
+    ~ $ hab [load [environment] | reload | unload | update | help]
+"
+}
+
+# Hab environment list
+function __hab_env_list() {
+  local envs=""
+
+  envs=$(
+    ls -a .envrc.* |
+    sed 's/'$HAB_BASE'\.\(.*\)/\1/g' |
+    tr '\n' ' '
+  )
+
+  echo "$envs"
+}
+
+# Hab completions
+function __hab() {
+  local current=""
+  local previous=""
+  local cmd=""
+  local cmds="load reload unload update help"
+  local envs=""
+
+  COMPREPLY=()
+  envs=$(__hab_env_list)
+  current="${COMP_WORDS[COMP_CWORD]}"
+  previous="${COMP_WORDS[COMP_CWORD - 1]}"
+
+  if [ "$COMP_CWORD" -eq 1 ]
+  then
+    case "$current" in
+      reload | unload | update | help)
+        ;;
+      load)
+        COMPREPLY=($(compgen -W "$envs" -- "$current"))
+        ;;
+      *)
+        COMPREPLY=($(compgen -W "$cmds $envs" -- "$current"))
+        ;;
+    esac
+  elif [ "$COMP_CWORD" -eq  2]
+  then
+    case "$previous" in
+      load)
+        COMPREPLY=($(compgen -W "$envs" -- "$current"))
+        ;;
+      *)
+        ;;
+    esac
+  fi
+
+  return 0
+}
+
+##################
+# Public functions
+
+# Main hab function.
+function hab() {
+  local cmd="$1"
+  local env="$2"
+
+  if [ -z "$cmd" ]
+  then
+    cmd="load"
+  fi
+
+  case "$cmd" in
+    load)
+      __hab_load "$env"
+      ;;
+    reload)
+      __hab_reload
+      ;;
+    unload)
+      __hab_unload
+      ;;
+    update)
+      __hab_update
+      ;;
+    help)
+      __hab_usage
+      ;;
+    *)
+      __hab_load "$cmd"
+      ;;
+  esac
+}
+
 ##############
 # Installation
 
 # Loads hab on `cd`
-chpwd_functions=(${chpwd_functions[@]} "hab_load")
+add-zsh-hook chpwd __hab_load
+add-zsh-hook precmd __hab_reload
+
+# Completions
+complete -F __hab hab
 
 # Loads hab when openning a TMUX pane.
-[ -n "$TMUX" ] && hab_load
+[ -n "$TMUX" ] && __hab_load

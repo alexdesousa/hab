@@ -7,6 +7,7 @@
 enviroment variables and functions automatically when:
 
 - Changing directories
+- After editing `.envrc` files.
 - Opening new TMUX shells.
 
 ## Small example
@@ -15,7 +16,7 @@ Given the following `.envrc` file in the folder `my_project`:
 
 ```bash
 # file: /home/user/my_project/.envrc
-export MY_HOSTNAME="https://my.hab"
+export HOSTNAME="https://my.hab"
 
 function clean_build() {
   rm -rf "$(pwd)/_build" 2> /dev/null
@@ -30,7 +31,7 @@ Then:
    ~ $ cd my_project
    [SUCCESS]  Loaded hab [/home/user/my_project/.envrc]
 
-   ~/my_project $ echo "$MY_HOSTNAME"
+   ~/my_project $ echo "$HOSTNAME"
    https://my.hab
 
    ~/my_project $ clean_build
@@ -41,35 +42,77 @@ Then:
 
    ```bash
    ~/my_project $ cd ..
-   [WARN]  Unloaded variable MY_HOSTNAME
+   [WARN]  Unloaded variable HOSTNAME
    [WARN]  Unloaded function clean_build
    ```
 
-## Helper commands
+## Hab Autoload
 
-Though everything happens automatically, this plugin provides the following
-command helpers:
+The environment will be (re)loaded automatically every time:
 
-- `hab_load [<extension>]` to manually load a `.envrc[.<extension>]` file.
-- `hab_unload` to manually unload current `.envrc[.<extension>]` file.
-- `hab_update` to manually update the plugin.
+- We change directory and there's a `.envrc` file available.
+- We edit the `.envrc` while its environment was already loaded.
 
-## Loading special habs
+## Different Habs
 
-By default, `Hab` will try to load `.envrc` file, but it's possible to have
-several of those files for different purposes e.g:
+Though `Hab` it's going to autoload `.envrc` automatically every time you change
+directories, you can manually load special environments e.g:
 
-- `.envrc.prod` for production OS variables.
-- `.envrc.test` for testing OS variables.
-- `.envrc` for development variables.
-
-`Hab` will load the development variables by default, but it can load the other
-files using the following command:
+Given the folliwing environment files:
 
 ```bash
-~/my_project $ hab_load prod # it'll load .envrc.prod
-[SUCCESS]  Loaded hab [/home/user/my_project/.envrc.prod]
+~/my_project $ ls -a
+.
+..
+.envrc
+.envrc.test
+.envrc.dev
+.envrc.prod
 ```
+
+We could load any of them by using its extension (no extension to use the
+default one) e.g:
+
+```bash
+~/my_project $ hab dev
+[WARN]     Unloaded variable HOSTNAME
+[WARN]     Unloaded function clean_build
+[SUCCESS]  Loaded hab [/home/user/my_project/.envrc.dev] (Last modified Wed 04 Mar 2020 03:42:52 PM CET)
+```
+
+## `Hab` Sub-commands
+
+Though we could never run a command as everything is done automatically, there
+are some useful sub-commands for handling things manually as well:
+
+- Loading environments:
+
+   ```bash
+   ~/my_project $ hab           # Loads .envrc
+   ~/my_project $ hab dev       # Loads .envrc.dev
+   ~/my_project $ hab load      # Loads .envrc
+   ~/my_project $ hab load dev  # Loads .envrc.dev
+   ```
+
+- Reloading environments:
+
+   ```bash
+   ~/my_project $ hab reload    # Reloads current environment
+   ```
+
+- Unloading environments:
+
+   ```bash
+   ~/my_project $ hab unload    # Unloads current environment
+   ```
+
+- Updating `Hab`:
+
+   ```bash
+   ~ $ hab update
+   ```
+
+> **Note**: `hab` command supports ZSH auto-completions.
 
 ## Base `Hab` name
 
@@ -77,7 +120,7 @@ The `Hab` file is `.envrc` by default. However this can be customized by
 changing the value of the variable `$HAB_BASE` in your `$HOME/.zshrc` file e.g:
 
 ```bash
-export HAB_BASE=".hab_base"
+export HAB_BASE=".env"
 ```
 
 ## Installation
@@ -91,17 +134,17 @@ Just clone `Hab` as follows:
 And add the hab to your `plugins` in `$HOME/.zshrc` file:
 
 ```bash
+autoload -U +X compinit && compinit
+autoload -U +X bashcompinit && bashcompinit
+autoload -U add-zsh-hook
+
 plugins=(
-  git
   hab
 )
 ```
 
-> Important: when updating you can run the following:
->
-> ```bash
-> cd `$ZSH_CUSTOM/plugins/hab` && git pull origin master
-> ```
+> **Note**: The `autoload`s are necessary for auto-completions and hook
+> installation.
 
 ## Author
 
