@@ -280,5 +280,5 @@ add-zsh-hook precmd __hab_reload
 # Completions
 complete -F __hab hab
 
-# Loads hab when openning a TMUX pane.
-[ -n "$TMUX" ] && __hab_load
+# Loads hab when starting zsh
+__hab_load
