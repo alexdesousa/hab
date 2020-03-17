@@ -8,7 +8,7 @@ enviroment variables and functions automatically when:
 
 - Changing directories
 - After editing `.envrc` files.
-- Opening new TMUX shells.
+- Opening new shells.
 
 ## Small example
 
@@ -52,6 +52,7 @@ The environment will be (re)loaded automatically every time:
 
 - We change directory and there's a `.envrc` file available.
 - We edit the `.envrc` while its environment was already loaded.
+- We open a new shell in a directory with an `.envrc` file present.
 
 ## Different Habs
 
@@ -80,7 +81,7 @@ default one) e.g:
 [SUCCESS]  Loaded hab [/home/user/my_project/.envrc.dev] (Last modified Wed 04 Mar 2020 03:42:52 PM CET)
 ```
 
-## `Hab` Sub-commands
+## `Hab` sub-commands
 
 Though we could never run a command as everything is done automatically, there
 are some useful sub-commands for handling things manually as well:
@@ -114,10 +115,40 @@ are some useful sub-commands for handling things manually as well:
 
 > **Note**: `hab` command supports ZSH auto-completions.
 
-## Base `Hab` name
+## Environment file
 
-The `Hab` file is `.envrc` by default. However this can be customized by
-changing the value of the variable `$HAB_BASE` in your `$HOME/.zshrc` file e.g:
+The environment file (defaults to `.envrc`) accepts a zsh subset:
+
+- Hab can only load and unload `export`s and `function`s e.g:
+
+   ```bash
+   export MY_VARIABLE=42
+
+   function hello() {
+      echo "Hello!"
+   }
+   ```
+
+- Hab ignores comments and empty lines.
+
+Additionally, if the comment `# INHERIT: true` is found in the file, every
+sub-directory will inherit the environment file (unless there's a file that
+overrides it) e.g. the following file will affect any folder inside
+`~/my_project`:
+
+```bash
+# file: ~/my_project/.envrc
+
+# INHERIT: true
+export MY_VARIABLE=42
+```
+
+> **Important**: In order for inheritance to work, you need to load the root
+> environment first. If you `cd` directly into a sub-folder without loading the
+> root folder's environment, it won't load the environment.
+
+The default environment file name can be customized globally by changing the
+value of the variable `$HAB_BASE` in your `.zshrc` file e.g:
 
 ```bash
 export HAB_BASE=".env"

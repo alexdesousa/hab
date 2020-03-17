@@ -1,11 +1,17 @@
-# # Hab zsh plugin
+# Hab zsh plugin
 #
 # A Hab is a set of exported OS environment variables. This plugin loads the OS
 # environment variables set in the file `.envrc` automatically every time you
-# `cd` to a folder or open a new pane in TMUX.
+# `cd` to a folder or open shell.
 #
 # It's possible to change the name of the default file base name setting the
 # variable `$HAB_BASE` in your .zshrc
+
+# shellcheck disable=SC1090
+# shellcheck disable=SC2012
+# shellcheck disable=SC2148
+# shellcheck disable=SC2155
+# shellcheck disable=SC2207
 
 ##################
 # Global variables
@@ -57,6 +63,10 @@ function __hab_get_file() {
   elif [ -r "$current_path/$HAB_BASE" ]
   then
     hab_file="$current_path/$HAB_BASE"
+  elif grep -q "# INHERIT: true" < "$HAB_CURRENT" &&
+       echo "$current_path" | grep -q "$(dirname "$HAB_CURRENT")"
+  then
+    hab_file="$HAB_CURRENT"
   fi
 
   echo "$hab_file"
@@ -68,8 +78,7 @@ function __hab_unload_variables() {
   local unload=""
 
   unload=$(
-    cat "$current_hab" |
-    grep '^export .*$' |
+    grep '^export .*$' < "$current_hab" |
     sed -e 's/^export \([0-9a-zA-Z\_]*\)=.*$/\1/'
   )
 
@@ -80,7 +89,7 @@ function __hab_unload_variables() {
       unset "$line"
       __hab_warn "Unloaded variable $line"
     fi
-  done <<<"$(echo "$unload")"
+  done <<<"$unload"
 }
 
 # Unloads functions
@@ -89,8 +98,7 @@ function __hab_unload_functions() {
   local unload=""
 
   unload=$(
-    cat "$current_hab" |
-    grep '^function .*$' |
+    grep '^function .*$' < "$current_hab" |
     sed -e 's/^function \([0-9a-zA-Z\_]*\).*$/\1/'
   )
 
@@ -101,7 +109,7 @@ function __hab_unload_functions() {
       unset -f "$line"
       __hab_warn "Unloaded function $line"
     fi
-  done <<<"$(echo "$unload")"
+  done <<<"$unload"
 }
 
 # Unloads current hab
@@ -121,7 +129,7 @@ function __hab_unload_current() {
 # Loads new hab
 function __hab_load_new() {
   export HAB_CURRENT="$1"
-  export HAB_MODIFICATION_DATE=$(date -r "$HAB_CURRENT")
+  export HAB_MODIFICATION_DATE="$(date -r "$HAB_CURRENT")"
 
   source "$HAB_CURRENT"
   __hab_success "Loaded hab [$HAB_CURRENT] (Last modified $HAB_MODIFICATION_DATE)"
@@ -221,7 +229,7 @@ function __hab() {
         COMPREPLY=($(compgen -W "$cmds $envs" -- "$current"))
         ;;
     esac
-  elif [ "$COMP_CWORD" -eq  2]
+  elif [ "$COMP_CWORD" -eq  2 ]
   then
     case "$previous" in
       load)
