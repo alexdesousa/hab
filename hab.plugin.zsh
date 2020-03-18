@@ -63,7 +63,9 @@ function __hab_get_file() {
   elif [ -r "$current_path/$HAB_BASE" ]
   then
     hab_file="$current_path/$HAB_BASE"
-  elif grep -q "# INHERIT: true" < "$HAB_CURRENT" &&
+  elif [ -n "$HAB_CURRENT" ] &&
+       [ -r "$HAB_CURRENT" ] &&
+       grep -q "# INHERIT: true" < "$HAB_CURRENT" &&
        echo "$current_path" | grep -q "$(dirname "$HAB_CURRENT")"
   then
     hab_file="$HAB_CURRENT"
